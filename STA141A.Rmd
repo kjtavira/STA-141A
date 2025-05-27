@@ -1,0 +1,80 @@
+---
+title: "STA141A_Project"
+output: pdf_document
+date: "2025-05-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+# Joining and Cleaning Dataset
+
+```{r}
+# Predictors
+demographics=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/Demographics.csv")
+supplements=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/TotalSupplements.csv")
+nutrients=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/TotalNutritionDay2.csv")
+# Response variables
+bloodpressure=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/BloodPressure.csv")
+glucose=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/GlycatedHemoglobin.csv")
+bodymeasurements=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/BodyMeasurements.csv")
+totalchol=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/TotalCholesterol.csv")
+hdl=read.csv("C:/Users/kjare/Downloads/drive-download-20250521T202410Z-1-001/HighDensityLipoprotein.csv")
+```
+
+```{r}
+# Selecting relevant columns
+demographics=demographics %>%
+  select(SEQN,DMDBORN4,DMDEDUC2,DMDMARTZ,INDFMPIR,RIAGENDR,RIDAGEYR)
+bloodpressure=bloodpressure %>%
+  select(SEQN,BPXODI1,BPXODI2,BPXODI3,BPXOSY1,BPXOSY2,BPXOSY3)
+bodymeasurements=bodymeasurements %>%
+  select(SEQN,BMXBMI,BMXWAIST)
+glucose=glucose %>%
+  select(SEQN,LBXGH)
+hdl=hdl %>%
+  select(SEQN,LBDHDD)
+totalchol=totalchol %>%
+  select(SEQN,LBXTC)
+nutrients=nutrients %>%
+  select(SEQN,DR2_330Z,DR2TALCO,DR2TCARB,DR2TCHOL,DR2TFIBE,DR2TKCAL,DR2TMFAT,DR2TPFAT,DR2TPROT,DR2TSFAT,DR2TSODI,DR2TTFAT)
+supplements=supplements %>%
+  select(SEQN,DSQTCAFF,DSQTCALC,DSQTCHL,DSQTCOPP,DSQTFA,DSQTIODI,DSQTIRON,DSQTLYCO,DSQTLZ,DSQTMAGN,DSQTNIAC,DSQTPHOS,DSQTPOTA,DSQTSELE,DSQTVB1,DSQTVB2,DSQTVB12,DSQTVB6,DSQTVC,DSQTVD,DSQTVK,DSQTZINC)
+```
+
+```{r}
+# Joining datasets
+dataset=demographics %>%
+  left_join(bloodpressure, by="SEQN") %>%
+  left_join(bodymeasurements, by="SEQN") %>%
+  left_join(glucose, by="SEQN") %>%
+  left_join(hdl, by="SEQN") %>%
+  left_join(totalchol, by="SEQN") %>%
+  left_join(nutrients, by="SEQN") %>%
+  left_join(supplements, by="SEQN")
+
+# Making columns of average blood pressure, and column of Non-HDL cholesterol
+dataset=dataset %>%
+  mutate("AverageDiastolic"=rowMeans(select(.,BPXODI1,BPXODI2,BPXODI3),na.rm=T), "AverageSystolic"=rowMeans(select(.,BPXOSY1,BPXOSY2,BPXOSY3),na.rm=T)) %>%
+  select(-BPXODI1,-BPXODI2,-BPXODI3,-BPXOSY1,-BPXOSY2,-BPXOSY3) %>%
+  mutate("NonHDLChol"=ifelse(!is.na(LBXTC) & !is.na(LBDHDD), LBXTC-LBDHDD, NA))
+```
+
+```{r}
+# Changing column names for ease of access
+colnames(dataset)=c("SEQN","CountryofBirth", "HighestEducationLevel", "MaritalStatus","IncomeToPovertyRatio","Gender","AgeInYrs","BMI","WaistCircumference","HbA1c","HDLCholesterol","TotalBloodCholesterol","TotalWater","TotalAlcohol","TotalCarb","TotalCholesterolIntake","TotalFiberIntake","TotalCalories","TotalMUFAs","TotalPUFAs","TotalProtein","TotalSFAs","TotalSodium","TotalFat","CaffeineIntake","CalciumIntake","CholineIntake","CopperIntake","FolicAcidIntake","IodineIntake","IronIntake","LycopeneIntake","Lutein+ZeaxanthinIntake","MagnesiumIntake","NiacinIntake","PhosphateIntake","PotassiumIntake","SeleniumIntake","VitaminB1Intake","VitaminB2Intake","VitaminB12Intake","VitaminB6Intake","VitaminCIntake","VitaminDIntake","VitaminKIntake","ZincIntake","AverageDiastolic","AverageSystolic","NonHDLChol")
+```
+
+Country of birth is coded as: 1 (Born in the US), 2 (Born in other countries).
+
+Highest education level is coded as: 1 (Less than 9th grade), 2 (9-11th grade), 3 (High school graduate or GED equivalent), 4 (Some college or Associate's degree), 5 (College graduate or above), 7 (Refused to answer, changed to NA), 9 (Don't know).
+
+Marital status is coded as: 1 (Married/Living with partner), 2 (Widowed/Divorced/Separated), 3 (Never Married).
+
+Gender is coded as: 1 (Male), 2 (Female).
