@@ -78,3 +78,78 @@ Highest education level is coded as: 1 (Less than 9th grade), 2 (9-11th grade), 
 Marital status is coded as: 1 (Married/Living with partner), 2 (Widowed/Divorced/Separated), 3 (Never Married).
 
 Gender is coded as: 1 (Male), 2 (Female).
+
+
+#Edits made by Katherine (raw data sets)
+
+#load in every data set
+supplements <- read.csv("TotalSupplements.csv")
+tnD1 <- read.csv("TotalNutritionDay1.csv") 
+tnD2 <- read.csv("TotalNutritionDay2.csv")
+cholesterol <- read.csv("TotalCholesterol.csv")
+liver_ult <- read.csv("LiverUltrasound.csv")
+insulin <- read.csv("Insulin.csv")
+hsCRP <- read.csv("HsCRP.csv") #high sensitivity C-reactive protein
+hdp <- read.csv("HighDensityLipoprotein.csv") 
+glycated_hemoglobin <- read.csv("GlycatedHemoglobin.csv")
+glucose <- read.csv("Glucose.csv")
+demographics <- read.csv("Demographics.csv")
+body_measurements <- read.csv("BodyMeasurements.csv")
+bloodpressure <- read.csv("BloodPressure.csv")
+
+data <- supplements |>
+  full_join(tnD1, by = "SEQN") |>
+  full_join(tnD2, by = "SEQN") |>
+  full_join(cholesterol, by = "SEQN") |>
+  full_join(liver_ult, by = "SEQN") |>
+  full_join(insulin, by = "SEQN") |>
+  full_join(hsCRP, by = "SEQN") |> 
+  full_join(hdp, by = "SEQN") |>
+  full_join(glycated_hemoglobin, by = "SEQN") |>
+  full_join(glucose, by = "SEQN") |>
+  full_join(demographics, by = "SEQN") |>
+  full_join(body_measurements, by = "SEQN") |>
+  full_join(bloodpressure, by = "SEQN")
+
+glimpse(data)
+summary(data)
+head(data)
+
+options(scipen = 999)
+
+#count NAs
+colSums(is.na(data))
+
+#install.packages("Amelia")
+library(Amelia)
+
+#Visulaize missing values
+missmap(data, main = "Missing Values Map")
+
+library(ggplot2)
+
+#Histogram
+ggplot(data, aes(x = DR1TKCAL)) +
+  geom_histogram(bins = 50, fill = "blue", color = "white") +
+  labs(title = "Distribution of Total Energy Intake (Day 1)")
+
+#Box plot for Body Mass Index (BMI)
+ggplot(data, aes(y = BMXBMI)) +
+  geom_boxplot(fill = "orange") +
+  labs(title = "BMI Distribution")
+
+ggplot(data, aes(x = factor(RIAGENDR))) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Gender Distribution", x = "Gender")
+
+Bivariate Analysis
+ggplot(data, aes(x = factor(RIAGENDR), y = DR1TKCAL)) +
+  geom_boxplot() +
+  labs(title = "Energy Intake by Gender", x = "Gender", y = "Energy Intake (kcal)")
+
+ggplot(data, aes(x = DR1TKCAL, y = BMXBMI)) +
+  geom_point(alpha = 0.4) + #alpha = transparency
+  geom_smooth(method = "lm") + #regression line
+  labs(title = "Calorie Intake vs BMI")
+
+
